@@ -6,13 +6,17 @@ import Cart from './components/Cart';
 import Login from './components/Login';
 import Register from './components/Register';
 import UserInfo from './components/UserInfo';
-import { CartItem, User } from './types';
+import { CartItem, User, Produto } from './types';
+import api from './services/api';
 
 function App() {
   const [activeTab, setActiveTab] = useState('menu');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Carregar usuário do localStorage se existir
   useEffect(() => {
@@ -22,15 +26,33 @@ function App() {
     }
   }, []);
 
+  // Carregar produtos do backend
+  useEffect(() => {
+    const carregarProdutos = async () => {
+      try {
+        const response = await api.getProdutos();
+        setProdutos(response.data);
+        setLoading(false);
+      } catch (err) {
+        setError('Erro ao carregar produtos');
+        setLoading(false);
+        console.error(err);
+      }
+    };
+    
+    carregarProdutos();
+  }, []);
+
   // Salvar usuário no localStorage quando mudar
   useEffect(() => {
     if (user) {
       localStorage.setItem('user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('user');
     }
   }, [user]);
 
   const addToCart = (item: CartItem) => {
-    // Verificar se o item já existe no carrinho
     const existingItemIndex = cart.findIndex(
       (cartItem) => 
         cartItem.id === item.id && 
@@ -38,12 +60,10 @@ function App() {
     );
 
     if (existingItemIndex >= 0) {
-      // Atualizar quantidade se o item já existir
       const updatedCart = [...cart];
       updatedCart[existingItemIndex].quantity += item.quantity;
       setCart(updatedCart);
     } else {
-      // Adicionar novo item ao carrinho
       setCart([...cart, item]);
     }
     
@@ -57,6 +77,8 @@ function App() {
   };
 
   const updateCartItemQuantity = (index: number, quantity: number) => {
+    if (quantity < 1) return;
+    
     const newCart = [...cart];
     newCart[index].quantity = quantity;
     setCart(newCart);
@@ -72,12 +94,33 @@ function App() {
     localStorage.removeItem('user');
   };
 
-  const handleOrderComplete = () => {
-    setCart([]);
-    setIsCartOpen(false);
+  const handleOrderComplete = async () => {
+    try {
+      // Aqui você pode implementar a lógica para enviar o pedido para o backend
+      // Exemplo:
+      // await api.criarPedido({
+      //   userId: user?.id,
+      //   items: cart,
+      //   total: calcularTotal(),
+      //   status: 'pendente'
+      // });
+      
+      setCart([]);
+      setIsCartOpen(false);
+    } catch (err) {
+      console.error('Erro ao finalizar pedido:', err);
+      setError('Erro ao finalizar pedido');
+    }
+  };
+
+  const calcularTotal = () => {
+    return cart.reduce((total, item) => total + (item.preco * item.quantity), 0);
   };
 
   const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
+
+  if (loading) return <div className="min-h-screen bg-gradient-to-b from-gray-800 to-black text-white flex items-center justify-center">Carregando...</div>;
+  if (error) return <div className="min-h-screen bg-gradient-to-b from-gray-800 to-black text-white flex items-center justify-center">{error}</div>;
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-800 to-black text-white">
@@ -91,19 +134,31 @@ function App() {
 
       <div className="container mx-auto px-4 py-8">
         {activeTab === 'menu' && (
-          <Menu addToCart={addToCart} />
+          <Menu 
+            addToCart={addToCart} 
+            produtos={produtos} 
+          />
         )}
         
         {activeTab === 'login' && (
-          <Login onLogin={handleLogin} switchToRegister={() => setActiveTab('register')} />
+          <Login 
+            onLogin={handleLogin} 
+            switchToRegister={() => setActiveTab('register')} 
+          />
         )}
         
         {activeTab === 'register' && (
-          <Register onRegister={handleLogin} switchToLogin={() => setActiveTab('login')} />
+          <Register 
+            onRegister={handleLogin} 
+            switchToLogin={() => setActiveTab('login')} 
+          />
         )}
         
         {activeTab === 'user-info' && user && (
-          <UserInfo user={user} onLogout={handleLogout} />
+          <UserInfo 
+            user={user} 
+            onLogout={handleLogout} 
+          />
         )}
       </div>
 
@@ -116,10 +171,13 @@ function App() {
         user={user}
         setActiveTab={setActiveTab}
         onOrderComplete={handleOrderComplete}
+        total={calcularTotal()}
       />
       
-      <div className="fixed bottom-4 right-4 md:hidden bg-gray-900 rounded-full p-3 shadow-lg" 
-        onClick={() => setIsCartOpen(!isCartOpen)}>
+      <div 
+        className="fixed bottom-4 right-4 md:hidden bg-gray-900 rounded-full p-3 shadow-lg" 
+        onClick={() => setIsCartOpen(!isCartOpen)}
+      >
         <div className="relative">
           <ShoppingCart size={24} />
           {cartItemCount > 0 && (

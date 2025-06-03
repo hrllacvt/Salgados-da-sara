@@ -1,27 +1,21 @@
-export interface Product {
-  id: string;
-  name: string;
-  price: number; // Preço para cento
-  category: 'fritos' | 'sortidos' | 'assados' | 'especiais' | 'opcionais';
-  minQuantity: number; // Quantidade mínima para pedidos de unidade
+export interface Produto {
+  id: number;
+  nome: string;
+  descricao: string;
+  preco: number;
+  imagem: string;
+  categoria?: string;
 }
 
-export interface CartItem {
-  id: string;
-  name: string;
-  price: number;
+export interface CartItem extends Produto {
   quantity: number;
-  orderType: 'cento' | 'meioCento' | 'unidade';
-  category: 'fritos' | 'sortidos' | 'assados' | 'especiais' | 'opcionais';
+  orderType: 'delivery' | 'pickup';
 }
 
 export interface User {
-  name: string;
-  phone: string;
+  id: number;
+  nome: string;
   email: string;
-  address: string;
-  complement?: string;
-  neighborhood: string;
-  city: string;
-  deliveryOption: 'delivery' | 'pickup';
+  telefone?: string;
+  endereco?: string;
 }
