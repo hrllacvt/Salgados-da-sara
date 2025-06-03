@@ -1,0 +1,31 @@
+CREATE TABLE produtos (
+			id SERIAL NOT NULL,
+			nome VARCHAR(60) NOT NULL,
+			descricao VARCHAR(100),
+			preco NUMERIC,
+			CONSTRAINT FK_produtos PRIMARY KEY (id)
+	
+)
+
+
+INSERT INTO produtos (nome, descricao, preco, categoria) 
+VALUES 
+('Bolinha de queijo', 'Deliciosas bolinhas de queijo', 110.00, 'fritos'),
+('Coxinha de frango', 'Coxinha com frango desfiado', 110.00, 'fritos');
+
+SELECT * FROM produtos WHERE id = $1
+'INSERT INTO produtos (nome, descricao, preco, imagem, categoria) VALUES ($1, $2, $3, $4, $5) RETURNING *'
+'UPDATE produtos SET nome = $1, descricao = $2, preco = $3, imagem = $4, categoria = $5 WHERE id = $6 RETURNING *'
+
+
+
+
+
+
+
+
+
+
+
+
+

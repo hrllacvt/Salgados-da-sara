@@ -1,3 +1,23 @@
+const express = require('express');
+const router = express.Router(); 
+const db = require('../db');
+
+// GET todos os produtos
+router.get('/', async (req, res) => {
+  try {
+    const { rows } = await db.query('SELECT * FROM produtos');
+    const produtos = rows.map(produto => ({
+      ...produto,
+      preco: Number(produto.preco)
+    }));
+    
+    res.json(produtos);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Erro no servidor');
+  }
+});
+
 // GET produto por ID
 router.get('/:id', async (req, res) => {
   try {
@@ -5,7 +25,7 @@ router.get('/:id', async (req, res) => {
     const { rows } = await db.query('SELECT * FROM produtos WHERE id = $1', [id]);
     
     if (rows[0]) {
-      rows[0].preco = Number(rows[0].preco); // Converter para número
+      rows[0].preco = Number(rows[0].preco);
     }
     
     res.json(rows[0] || {});
@@ -24,7 +44,7 @@ router.post('/', async (req, res) => {
       [nome, descricao, preco, imagem, categoria]
     );
     
-    rows[0].preco = Number(rows[0].preco); // Converter para número
+    rows[0].preco = Number(rows[0].preco);
     res.status(201).json(rows[0]);
   } catch (err) {
     console.error(err.message);
@@ -42,10 +62,24 @@ router.put('/:id', async (req, res) => {
       [nome, descricao, preco, imagem, categoria, id]
     );
     
-    rows[0].preco = Number(rows[0].preco); // Converter para número
+    rows[0].preco = Number(rows[0].preco);
     res.json(rows[0]);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Erro no servidor');
   }
 });
+
+// DELETE produto
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.query('DELETE FROM produtos WHERE id = $1', [id]);
+    res.status(204).send();
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Erro no servidor');
+  }
+});
+
+module.exports = router;
