@@ -96,14 +96,6 @@ function App() {
 
   const handleOrderComplete = async () => {
     try {
-      // Aqui você pode implementar a lógica para enviar o pedido para o backend
-      // Exemplo:
-      // await api.criarPedido({
-      //   userId: user?.id,
-      //   items: cart,
-      //   total: calcularTotal(),
-      //   status: 'pendente'
-      // });
       
       setCart([]);
       setIsCartOpen(false);
@@ -171,7 +163,6 @@ function App() {
         user={user}
         setActiveTab={setActiveTab}
         onOrderComplete={handleOrderComplete}
-        total={calcularTotal()}
       />
       
       <div 

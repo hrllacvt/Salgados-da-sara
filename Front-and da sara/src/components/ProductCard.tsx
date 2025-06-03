@@ -1,59 +1,47 @@
 import React, { useState } from 'react';
-import { Product, CartItem } from '../types';
+import { Produto, CartItem } from '../types';
 
 interface ProductCardProps {
-  product: Product;
+  product: Produto;
   addToCart: (item: CartItem) => void;
 }
 
+type CategoriaValida = 'fritos' | 'sortidos' | 'assados' | 'especiais' | 'opcionais';
+
 const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
-  const [orderType, setOrderType] = useState<'cento' | 'meioCento' | 'unidade'>('cento');
+  const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery');
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
 
-  // Calcular preço baseado no tipo de pedido
-  const calculatePrice = (basePrice: number, type: 'cento' | 'meioCento' | 'unidade'): number => {
-    if (product.category === 'opcionais') {
-      return basePrice;
-    }
-    
-    // Retorna o preço exato para cada tipo de pedido
-    switch(type) {
-      case 'cento':
-        return basePrice;
-      case 'meioCento':
-        return basePrice / 2;
-      case 'unidade':
-        return basePrice / 100;
-      default:
-        return basePrice;
-    }
+  // Mapa de quantidades mínimas
+  const minQuantities: Record<CategoriaValida, number> = {
+    'fritos': 10,
+    'sortidos': 20,
+    'assados': 20,
+    'especiais': 20,
+    'opcionais': 1
   };
 
-  const currentPrice = calculatePrice(product.price, orderType);
-  
-  // Calcular quantidade mínima baseada no tipo de pedido
+  // Obter quantidade mínima com fallback seguro
   const getMinQuantity = (): number => {
-    if (orderType === 'unidade') {
-      return product.minQuantity;
+    if (product.categoria && product.categoria in minQuantities) {
+      return minQuantities[product.categoria as CategoriaValida];
     }
     return 1;
   };
 
+  const minQty = getMinQuantity();
+
   const handleAddToCart = () => {
-    // Verificar quantidade mínima
-    if (orderType === 'unidade' && quantity < product.minQuantity) {
-      alert(`Quantidade mínima para ${product.name} é ${product.minQuantity} unidades.`);
+    if (quantity < minQty) {
+      alert(`Quantidade mínima para ${product.nome} é ${minQty} unidades.`);
       return;
     }
 
     const item: CartItem = {
-      id: product.id,
-      name: product.name,
-      price: currentPrice,
-      quantity: product.category === 'opcionais' ? quantity : quantity,
+      ...product,
+      quantity,
       orderType,
-      category: product.category,
     };
     
     addToCart(item);
@@ -61,21 +49,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
     setQuantity(1);
   };
 
+  // Função segura para converter preço para número
+  const getPrecoNumerico = () => {
+    if (typeof product.preco === 'number') return product.preco;
+    return Number(product.preco) || 0;
+  };
+
   return (
     <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden transform transition-all hover:scale-[1.02]">
       <div className="p-5">
-        <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
+        <h3 className="text-lg font-semibold mb-2">{product.nome}</h3>
         
         <div className="flex justify-between items-center mb-4">
           <div className="flex flex-col">
             <span className="text-gray-400 text-sm">
-              {product.category === 'opcionais' ? 'Porção' :
-                orderType === 'cento' ? 'Cento (100 unidades)' :
-                orderType === 'meioCento' ? 'Meio Cento (50 unidades)' :
-                'Unidade'}
+              {product.categoria === 'opcionais' ? 'Porção' : 'Unidade'}
             </span>
             <span className="text-xl font-bold">
-              R$ {currentPrice.toFixed(2)}
+              R$ {getPrecoNumerico().toFixed(2)}
             </span>
           </div>
           
@@ -91,48 +82,45 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, addToCart }) => {
         
         {isAdding && (
           <div className="mt-4 space-y-4">
-            {product.category !== 'opcionais' && (
-              <div className="flex flex-col space-y-2">
-                <label className="text-sm text-gray-300">Selecione uma opção:</label>
-                <div className="flex gap-2">
-                  <button 
-                    className={`px-3 py-1 rounded-md text-sm ${orderType === 'cento' ? 'bg-gray-100 text-gray-900' : 'bg-gray-700 text-white'}`}
-                    onClick={() => setOrderType('cento')}
-                  >
-                    Cento
-                  </button>
-                  <button 
-                    className={`px-3 py-1 rounded-md text-sm ${orderType === 'meioCento' ? 'bg-gray-100 text-gray-900' : 'bg-gray-700 text-white'}`}
-                    onClick={() => setOrderType('meioCento')}
-                  >
-                    Meio Cento
-                  </button>
-                  <button 
-                    className={`px-3 py-1 rounded-md text-sm ${orderType === 'unidade' ? 'bg-gray-100 text-gray-900' : 'bg-gray-700 text-white'}`}
-                    onClick={() => setOrderType('unidade')}
-                  >
-                    Unidade
-                  </button>
-                </div>
+            <div className="flex flex-col space-y-2">
+              <label className="text-sm text-gray-300">Tipo de Entrega:</label>
+              <div className="flex gap-2">
+                <button 
+                  className={`px-3 py-1 rounded-md text-sm ${orderType === 'delivery' ? 'bg-gray-100 text-gray-900' : 'bg-gray-700 text-white'}`}
+                  onClick={() => setOrderType('delivery')}
+                >
+                  Entrega
+                </button>
+                <button 
+                  className={`px-3 py-1 rounded-md text-sm ${orderType === 'pickup' ? 'bg-gray-100 text-gray-900' : 'bg-gray-700 text-white'}`}
+                  onClick={() => setOrderType('pickup')}
+                >
+                  Retirada
+                </button>
               </div>
-            )}
+            </div>
             
             <div className="flex flex-col space-y-2">
               <label className="text-sm text-gray-300">
-                Quantidade{orderType === 'unidade' && product.category !== 'opcionais' ? ` (min. ${product.minQuantity})`: ''}:
+                Quantidade {minQty > 1 ? `(mín. ${minQty})` : ''}:
               </label>
               <div className="flex items-center">
                 <button 
                   className="bg-gray-700 px-3 py-1 rounded-md"
-                  onClick={() => setQuantity(Math.max(getMinQuantity(), quantity - 1))}
+                  onClick={() => setQuantity(Math.max(minQty, quantity - 1))}
                 >
                   -
                 </button>
                 <input
                   type="number"
-                  min={getMinQuantity()}
+                  min={minQty}
                   value={quantity}
-                  onChange={(e) => setQuantity(Math.max(getMinQuantity(), parseInt(e.target.value) || 1))}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value);
+                    if (!isNaN(value)) {
+                      setQuantity(Math.max(minQty, value));
+                    }
+                  }}
                   className="w-16 text-center mx-2 bg-gray-700 text-white py-1 rounded-md"
                 />
                 <button 

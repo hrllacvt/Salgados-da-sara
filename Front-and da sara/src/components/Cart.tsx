@@ -27,10 +27,21 @@ const Cart: React.FC<CartProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<string>('');
   const [deliveryOption, setDeliveryOption] = useState<'delivery' | 'pickup'>('pickup');
   
-  const calculateSubtotal = () => {
-    return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  // Função segura para converter preço para número
+  const parsePreco = (preco: number | string): number => {
+    if (typeof preco === 'number') return preco;
+    return parseFloat(preco) || 0;
   };
 
+  // Calcular subtotal
+  const calculateSubtotal = () => {
+    return items.reduce((sum, item) => {
+      const precoNumerico = parsePreco(item.preco);
+      return sum + (precoNumerico * item.quantity);
+    }, 0);
+  };
+
+  // Calcular total
   const calculateTotal = () => {
     const subtotal = calculateSubtotal();
     const deliveryFee = deliveryOption === 'delivery' ? 10 : 0;
@@ -53,7 +64,6 @@ const Cart: React.FC<CartProps> = ({
       return;
     }
     
-    // Aqui você pode adicionar a lógica para finalizar o pedido
     alert('Pedido realizado com sucesso! Um atendente entrará em contato para confirmar seu pedido.');
     
     // Resetar o estado
@@ -91,50 +101,54 @@ const Cart: React.FC<CartProps> = ({
                   Seu carrinho está vazio
                 </div>
               ) : (
-                items.map((item, index) => (
-                  <div key={`${item.id}-${item.orderType}-${index}`} className="bg-gray-700 rounded-lg p-3">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="font-medium">{item.name}</h3>
-                        <p className="text-sm text-gray-400">
-                          {item.category === 'opcionais' ? 'Porção' :
-                            item.orderType === 'cento' ? 'Cento (100 unidades)' :
-                            item.orderType === 'meioCento' ? 'Meio Cento (50 unidades)' :
-                            'Unidade'}
-                        </p>
-                      </div>
-                      <button 
-                        className="text-gray-400 hover:text-white"
-                        onClick={() => onRemove(index)}
-                      >
-                        <X size={18} />
-                      </button>
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center">
+                items.map((item, index) => {
+                  const precoNumerico = parsePreco(item.preco);
+                  return (
+                    <div key={`${item.id}-${item.orderType}-${index}`} className="bg-gray-700 rounded-lg p-3">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="font-medium">{item.nome}</h3>
+                          <p className="text-sm text-gray-400">
+                            {item.orderType === 'delivery' ? 'Entrega' : 'Retirada'} 
+                          </p>
+                        </div>
                         <button 
-                          className="bg-gray-600 px-2 py-1 rounded"
-                          onClick={() => onUpdateQuantity(index, Math.max(1, item.quantity - 1))}
+                          className="text-gray-400 hover:text-white"
+                          onClick={() => onRemove(index)}
                         >
-                          -
-                        </button>
-                        <span className="mx-2">{item.quantity}</span>
-                        <button 
-                          className="bg-gray-600 px-2 py-1 rounded"
-                          onClick={() => onUpdateQuantity(index, item.quantity + 1)}
-                        >
-                          +
+                          <X size={18} />
                         </button>
                       </div>
                       
-                      <div className="text-right">
-                        <p className="font-medium">R$ {(item.price * item.quantity).toFixed(2)}</p>
-                        <p className="text-xs text-gray-400">R$ {item.price.toFixed(2)} cada</p>
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center">
+                          <button 
+                            className="bg-gray-600 px-2 py-1 rounded"
+                            onClick={() => onUpdateQuantity(index, Math.max(1, item.quantity - 1))}
+                          >
+                            -
+                          </button>
+                          <span className="mx-2">{item.quantity}</span>
+                          <button 
+                            className="bg-gray-600 px-2 py-1 rounded"
+                            onClick={() => onUpdateQuantity(index, item.quantity + 1)}
+                          >
+                            +
+                          </button>
+                        </div>
+                        
+                        <div className="text-right">
+                          <p className="font-medium">
+                            R$ {(precoNumerico * item.quantity).toFixed(2)}
+                          </p> 
+                          <p className="text-xs text-gray-400">
+                            R$ {precoNumerico.toFixed(2)} cada
+                          </p> 
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
             
@@ -196,12 +210,12 @@ const Cart: React.FC<CartProps> = ({
                 <h3 className="font-medium mb-3">Informações do Cliente</h3>
                 {user && (
                   <div className="bg-gray-700 p-3 rounded-lg">
-                    <p><strong>Nome:</strong> {user.name}</p>
-                    <p><strong>Telefone:</strong> {user.phone}</p>
-                    <p><strong>Endereço:</strong> {user.address}</p>
-                    {user.complement && <p><strong>Complemento:</strong> {user.complement}</p>}
-                    <p><strong>Bairro:</strong> {user.neighborhood}</p>
-                    <p><strong>Cidade:</strong> {user.city}</p>
+                    <p><strong>Nome:</strong> {user.nome}</p>
+                    <p><strong>Telefone:</strong> {user.telefone}</p>
+                    {user.endereco && <p><strong>Endereço:</strong> {user.endereco}</p>}
+                    {user.complemento && <p><strong>Complemento:</strong> {user.complemento}</p>}
+                    {user.bairro && <p><strong>Bairro:</strong> {user.bairro}</p>}
+                    {user.cidade && <p><strong>Cidade:</strong> {user.cidade}</p>}
                     <p><strong>Tipo de Entrega:</strong> {deliveryOption === 'delivery' ? 'Entrega' : 'Retirada no Local'}</p>
                   </div>
                 )}
@@ -252,12 +266,15 @@ const Cart: React.FC<CartProps> = ({
                 <h3 className="font-medium mb-3">Resumo do Pedido</h3>
                 <div className="bg-gray-700 p-3 rounded-lg">
                   <div className="space-y-2 mb-3">
-                    {items.map((item, index) => (
-                      <div key={index} className="flex justify-between">
-                        <span>{item.quantity}x {item.name}</span>
-                        <span>R$ {(item.price * item.quantity).toFixed(2)}</span>
-                      </div>
-                    ))}
+                    {items.map((item, index) => {
+                      const precoNumerico = parsePreco(item.preco);
+                      return (
+                        <div key={index} className="flex justify-between">
+                          <span>{item.quantity}x {item.nome}</span>
+                          <span>R$ {(precoNumerico * item.quantity).toFixed(2)}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                   <div className="pt-2 border-t border-gray-600">
                     <div className="flex justify-between">

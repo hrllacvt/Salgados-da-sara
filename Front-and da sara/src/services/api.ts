@@ -1,8 +1,9 @@
+// front-and-da-sara/src/services/api.ts
 import axios, { AxiosResponse } from 'axios';
 import { Produto } from '../types';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: 'http://localhost:5000/api', // URL do seu backend
 });
 
 export default {
@@ -14,5 +15,4 @@ export default {
     api.put(`/produtos/${id}`, produto),
   deletarProduto: (id: number): Promise<AxiosResponse<void>> => 
     api.delete(`/produtos/${id}`),
-  // Adicione outras chamadas API conforme necessário
 };
